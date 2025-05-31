@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный гид по временам английского языка</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            border-color: #2563eb; /* blue-600 */
+        }
+        .aspect-tab-active {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #1e3a8a; /* blue-900 */
+            font-weight: 600;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .quiz-option:disabled {
+            cursor: not-allowed;
+        }
+        .timeline {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb; /* slate-200 */
+            border-radius: 9999px;
+            position: relative;
+            margin-top: 1rem;
+            margin-bottom: 2.5rem; /* Increased bottom margin for labels */
+        }
+        .timeline-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444; /* red-500 */
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+        .timeline-label {
+            position: absolute;
+            top: 25px; /* Positioned below the timeline */
+            transform: translateX(-50%);
+            font-size: 0.75rem; /* 12px */
+            color: #4b5563; /* slate-600 */
+            white-space: nowrap;
+        }
+        .timeline-process {
+            position: absolute;
+            height: 100%;
+            background-color: #3b82f6; /* blue-500 */
+            opacity: 0.5;
+            border-radius: 9999px;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 0.5rem; /* 8px */
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-5xl font-bold text-slate-900">Интерактивный гид по временам</h1>
+            <p class="text-slate-600 mt-2">Выберите время и аспект, чтобы изучить правила и пройти практику.</p>
+            <button id="openVerbsModal" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Таблица неправильных глаголов
+            </button>
+        </header>
+
+        <main>
+            <nav id="time-nav" class="flex justify-center gap-2 md:gap-4 mb-6">
+                <button data-time="Present" class="time-tab w-full md:w-auto text-lg font-semibold py-3 px-6 rounded-lg border-2 border-slate-300 transition-all duration-300">Настоящее</button>
+                <button data-time="Past" class="time-tab w-full md:w-auto text-lg font-semibold py-3 px-6 rounded-lg border-2 border-slate-300 transition-all duration-300">Прошедшее</button>
+                <button data-time="Future" class="time-tab w-full md:w-auto text-lg font-semibold py-3 px-6 rounded-lg border-2 border-slate-300 transition-all duration-300">Будущее</button>
+            </nav>
+
+            <div id="aspect-nav-container" class="bg-white p-2 rounded-xl shadow-sm mb-8 sticky top-2 z-10">
+                <nav id="aspect-nav" class="flex flex-wrap justify-center gap-2">
+                    <button data-aspect="Simple" class="aspect-tab flex-grow md:flex-grow-0 text-sm md:text-base font-medium py-2 px-4 rounded-lg transition-all duration-300">Simple</button>
+                    <button data-aspect="Continuous" class="aspect-tab flex-grow md:flex-grow-0 text-sm md:text-base font-medium py-2 px-4 rounded-lg transition-all duration-300">Continuous</button>
+                    <button data-aspect="Perfect" class="aspect-tab flex-grow md:flex-grow-0 text-sm md:text-base font-medium py-2 px-4 rounded-lg transition-all duration-300">Perfect</button>
+                    <button data-aspect="PerfectContinuous" class="aspect-tab flex-grow md:flex-grow-0 text-sm md:text-base font-medium py-2 px-4 rounded-lg transition-all duration-300">Perfect Continuous</button>
+                </nav>
+            </div>
+            
+            <div id="content-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg min-h-[500px]">
+                </div>
+        </main>
+    </div>
+
+    <div id="verbsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeVerbsModal">&times;</span>
+            <h2 class="text-2xl font-bold mb-4 text-slate-800">Неправильные глаголы (Irregular Verbs)</h2>
+            <p class="mb-4 text-sm text-slate-600">Большинство глаголов в английском языке являются правильными. Их формы прошедшего времени (Past Simple) и причастия прошедшего времени (Past Participle) образуются путем добавления окончания <strong>-ed</strong> к инфинитиву (например, work - worked - worked, play - played - played). Ниже приведен список наиболее употребительных неправильных глаголов, формы которых нужно запомнить.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Infinitive</th>
+                        <th>Past Simple</th>
+                        <th>Past Participle</th>
+                        <th>Перевод</th>
+                    </tr>
+                </thead>
+                <tbody id="irregularVerbsTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const irregularVerbsData = [
+            { v1: "be", v2: "was/were", v3: "been", translation: "быть" },
+            { v1: "become", v2: "became", v3: "become", translation: "становиться" },
+            { v1: "begin", v2: "began", v3: "begun", translation: "начинать" },
+            { v1: "break", v2: "broke", v3: "broken", translation: "ломать" },
+            { v1: "bring", v2: "brought", v3: "brought", translation: "приносить" },
+            { v1: "build", v2: "built", v3: "built", translation: "строить" },
+            { v1: "buy", v2: "bought", v3: "bought", translation: "покупать" },
+            { v1: "can", v2: "could", v3: "been able", translation: "мочь" },
+            { v1: "catch", v2: "caught", v3: "caught", translation: "ловить" },
+            { v1: "choose", v2: "chose", v3: "chosen", translation: "выбирать" },
+            { v1: "come", v2: "came", v3: "come", translation: "приходить" },
+            { v1: "cost", v2: "cost", v3: "cost", translation: "стоить" },
+            { v1: "cut", v2: "cut", v3: "cut", translation: "резать" },
+            { v1: "do", v2: "did", v3: "done", translation: "делать" },
+            { v1: "draw", v2: "drew", v3: "drawn", translation: "рисовать" },
+            { v1: "drink", v2: "drank", v3: "drunk", translation: "пить" },
+            { v1: "drive", v2: "drove", v3: "driven", translation: "водить (машину)" },
+            { v1: "eat", v2: "ate", v3: "eaten", translation: "есть" },
+            { v1: "fall", v2: "fell", v3: "fallen", translation: "падать" },
+            { v1: "feel", v2: "felt", v3: "felt", translation: "чувствовать" },
+            { v1: "find", v2: "found", v3: "found", translation: "находить" },
+            { v1: "fly", v2: "flew", v3: "flown", translation: "летать" },
+            { v1: "forget", v2: "forgot", v3: "forgotten", translation: "забывать" },
+            { v1: "get", v2: "got", v3: "got/gotten", translation: "получать" },
+            { v1: "give", v2: "gave", v3: "given", translation: "давать" },
+            { v1: "go", v2: "went", v3: "gone", translation: "идти, ехать" },
+            { v1: "grow", v2: "grew", v3: "grown", translation: "расти" },
+            { v1: "have", v2: "had", v3: "had", translation: "иметь" },
+            { v1: "hear", v2: "heard", v3: "heard", translation: "слышать" },
+            { v1: "know", v2: "knew", v3: "known", translation: "знать" },
+            { v1: "learn", v2: "learnt/learned", v3: "learnt/learned", translation: "учить" },
+            { v1: "leave", v2: "left", v3: "left", translation: "покидать, оставлять" },
+            { v1: "lose", v2: "lost", v3: "lost", translation: "терять" },
+            { v1: "make", v2: "made", v3: "made", translation: "делать, создавать" },
+            { v1: "meet", v2: "met", v3: "met", translation: "встречать" },
+            { v1: "pay", v2: "paid", v3: "paid", translation: "платить" },
+            { v1: "put", v2: "put", v3: "put", translation: "класть" },
+            { v1: "read", v2: "read", v3: "read", translation: "читать" },
+            { v1: "ride", v2: "rode", v3: "ridden", translation: "ездить (верхом, на велосипеде)" },
+            { v1: "run", v2: "ran", v3: "run", translation: "бежать" },
+            { v1: "say", v2: "said", v3: "said", translation: "говорить, сказать" },
+            { v1: "see", v2: "saw", v3: "seen", translation: "видеть" },
+            { v1: "sell", v2: "sold", v3: "sold", translation: "продавать" },
+            { v1: "send", v2: "sent", v3: "sent", translation: "посылать" },
+            { v1: "sing", v2: "sang", v3: "sung", translation: "петь" },
+            { v1: "sit", v2: "sat", v3: "sat", translation: "сидеть" },
+            { v1: "sleep", v2: "slept", v3: "slept", translation: "спать" },
+            { v1: "speak", v2: "spoke", v3: "spoken", translation: "говорить (на языке)" },
+            { v1: "spend", v2: "spent", v3: "spent", translation: "тратить, проводить (время)" },
+            { v1: "stand", v2: "stood", v3: "stood", translation: "стоять" },
+            { v1: "swim", v2: "swam", v3: "swum", translation: "плавать" },
+            { v1: "take", v2: "took", v3: "taken", translation: "брать, взять" },
+            { v1: "teach", v2: "taught", v3: "taught", translation: "учить, преподавать" },
+            { v1: "tell", v2: "told", v3: "told", translation: "рассказывать" },
+            { v1: "think", v2: "thought", v3: "thought", translation: "думать" },
+            { v1: "understand", v2: "understood", v3: "understood", translation: "понимать" },
+            { v1: "wake", v2: "woke", v3: "woken", translation: "просыпаться" },
+            { v1: "wear", v2: "wore", v3: "worn", translation: "носить (одежду)" },
+            { v1: "win", v2: "won", v3: "won", translation: "выигрывать" },
+            { v1: "write", v2: "wrote", v3: "written", translation: "писать" },
+        ];
+
+        const data = {
+            PresentSimple: {
+                title: "Present Simple (Простое настоящее)",
+                intro: "Это время используется для описания регулярных действий, фактов и привычек. Это основа для построения простых утверждений о мире.",
+                timeline: `<div class="timeline"><div class="timeline-point" style="left: 20%;"></div><div class="timeline-point" style="left: 50%;"></div><div class="timeline-point" style="left: 80%;"></div><div class="timeline-label" style="left: 50%;">Регулярные действия</div></div>`,
+                usage: [
+                    "Регулярные, повторяющиеся действия, привычки: <i>I wake up at 7 AM every day.</i>",
+                    "Общеизвестные факты, законы природы: <i>The Earth goes around the Sun.</i>",
+                    "Расписания, программы: <i>The train leaves at 9:00.</i>"
+                ],
+                formula: { positive: "I/You/We/They + V1<br>He/She/It + V1-s/es", negative: "I/You/We/They + do not (don't) + V1<br>He/She/It + does not (doesn't) + V1", question: "Do + I/you/we/they + V1?<br>Does + he/she/it + V1?" },
+                markers: "always, usually, often, sometimes, never, every day, on Mondays.",
+                examples: [ "She <b>works</b> in a bank.", "They <b>don't like</b> spicy food.", "<b>Do</b> you <b>speak</b> English?" ],
+                quizzes: [
+                    { question: "She ___ to the gym every Tuesday.", options: ["go", "goes", "is going", "went"], answer: "goes" },
+                    { question: "Water ___ at 100 degrees Celsius.", options: ["boil", "boils", "is boiling", "boiled"], answer: "boils" },
+                    { question: "My parents ___ in a small house.", options: ["live", "lives", "are living", "lived"], answer: "live" }
+                ]
+            },
+            PresentContinuous: {
+                title: "Present Continuous (Настоящее длительное)",
+                intro: "Используется для описания действий, происходящих прямо сейчас, в момент речи, или временных ситуаций в настоящем.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 20%; width: 60%;"></div><div class="timeline-point" style="left: 50%;"></div><div class="timeline-label" style="left: 50%;">Сейчас</div></div>`,
+                usage: [ "Действия, происходящие в момент речи: <i>I <b>am talking</b> on the phone now.</i>", "Временные ситуации: <i>He <b>is learning</b> to drive.</i>", "Запланированные действия на ближайшее будущее: <i>We <b>are meeting</b> friends tonight.</i>", "Раздражающие привычки (с always): <i>She <b>is always losing</b> her keys!</i>" ],
+                formula: { positive: "I + am + V-ing<br>He/She/It + is + V-ing<br>You/We/They + are + V-ing", negative: "Subject + am/is/are + not + V-ing", question: "Am/Is/Are + subject + V-ing?" },
+                markers: "now, right now, at the moment, today, this week, Look!, Listen!.",
+                examples: [ "Listen! Someone <b>is playing</b> the piano.", "They <b>aren't watching</b> TV at the moment.", "What <b>are</b> you <b>doing</b>?" ],
+                quizzes: [
+                    { question: "I ___ a new novel about a romantic boy now.", options: ["write", "am writing", "have been written", "writes"], answer: "am writing" },
+                    { question: "Look! The children ___ in the park.", options: ["play", "plays", "are playing", "played"], answer: "are playing" },
+                    { question: "Why ___ you ___ that strange hat today?", options: ["do ... wear", "are ... wearing", "does ... wear", "is ... wearing"], answer: "are ... wearing" }
+                ]
+            },
+            PresentPerfect: {
+                title: "Present Perfect (Настоящее совершенное)",
+                intro: "Связывает прошлое с настоящим. Обозначает действие, которое произошло в прошлом, но его результат важен сейчас.",
+                timeline: `<div class="timeline"><div class="timeline-point" style="left: 40%;"></div><div class="timeline-process" style="left: 40%; width: 40%; background: transparent; border-bottom: 3px dotted #3b82f6;"></div><div class="timeline-point" style="left: 80%; background-color: #22c55e;"></div><div class="timeline-label" style="left: 40%;">Прошлое действие</div><div class="timeline-label" style="left: 80%;">Результат сейчас</div></div>`,
+                usage: [ "Действие в прошлом с результатом в настоящем: <i>I <b>have lost</b> my keys.</i> (Результат: я не могу войти).", "Личный опыт: <i>She <b>has been</b> to Paris.</i>", "Действия в незавершенный период времени: <i>I <b>haven't seen</b> him this morning.</i>" ],
+                formula: { positive: "I/You/We/They + have + V3<br>He/She/It + has + V3", negative: "Subject + have/has + not + V3", question: "Have/Has + subject + V3?" },
+                markers: "just, already, yet, ever, never, recently, for, since.",
+                examples: [ "He <b>has just finished</b> his homework.", "We <b>haven't decided</b> yet.", "<b>Have</b> you <b>ever eaten</b> sushi?" ],
+                quizzes: [
+                    { question: "They ___ to London, so they know the city well.", options: ["were", "have been", "go", "are"], answer: "have been" },
+                    { question: "I ___ this film before. It's great!", options: ["see", "saw", "have seen", "am seeing"], answer: "have seen" },
+                    { question: "She ___ (not finish) her project yet.", options: ["doesn't finish", "didn't finish", "hasn't finished", "isn't finishing"], answer: "hasn't finished" }
+                ]
+            },
+            PresentPerfectContinuous: {
+                title: "Present Perfect Continuous (Настоящее совершенное длительное)",
+                intro: "Фокусируется на длительности действия, которое началось в прошлом и продолжается до сих пор, или только что завершилось.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 10%; width: 80%;"></div><div class="timeline-point" style="left: 90%; background-color: #22c55e;"></div><div class="timeline-label" style="left: 50%;">Действие длится до сейчас</div></div>`,
+                usage: [ "Действие началось в прошлом и все еще продолжается: <i>I <b>have been waiting</b> for two hours.</i>", "Действие только что закончилось, и виден результат: <i>She is tired because she <b>has been working</b> all day.</i>" ],
+                formula: { positive: "Subject + have/has + been + V-ing", negative: "Subject + have/has + not + been + V-ing", question: "Have/Has + subject + been + V-ing?" },
+                markers: "for, since, all day, lately, how long...?",
+                examples: [ "They <b>have been playing</b> football since morning.", "How long <b>have</b> you <b>been learning</b> English?" ],
+                quizzes: [
+                    { question: "He is out of breath. He ___ for an hour.", options: ["ran", "runs", "has been running", "is running"], answer: "has been running" },
+                    { question: "We ___ this TV show for three hours!", options: ["watch", "are watching", "have watched", "have been watching"], answer: "have been watching" },
+                    { question: "How long ___ you ___ for me?", options: ["do ... wait", "are ... waiting", "have ... waited", "have ... been waiting"], answer: "have ... been waiting" }
+                ]
+            },
+            PastSimple: {
+                title: "Past Simple (Простое прошедшее)",
+                intro: "Используется для описания действий, которые начались и закончились в определенный момент в прошлом.",
+                timeline: `<div class="timeline"><div class="timeline-point" style="left: 30%;"></div><div class="timeline-label" style="left: 30%;">Завершенное действие</div></div>`,
+                usage: [ "Действие, которое произошло в определенный момент в прошлом: <i>I <b>visited</b> London last year.</i>", "Последовательность действий в прошлом: <i>She <b>woke up</b>, <b>had</b> breakfast, and <b>went</b> to work.</i>", "Привычки в прошлом: <i>He <b>played</b> tennis every Sunday when he was young.</i>" ],
+                formula: { positive: "Subject + V2 / V-ed", negative: "Subject + did not (didn't) + V1", question: "Did + subject + V1?" },
+                markers: "yesterday, last week/month/year, ... ago, in 1990.",
+                examples: [ "We <b>watched</b> a film yesterday.", "She <b>didn't come</b> to the party.", "<b>Did</b> they <b>buy</b> a new car?" ],
+                quizzes: [
+                    { question: "We ___ to the cinema last night.", options: ["go", "are going", "went", "have gone"], answer: "went" },
+                    { question: "Mozart ___ more than 600 pieces of music.", options: ["writes", "wrote", "has written", "was writing"], answer: "wrote" },
+                    { question: "___ you ___ the match on TV yesterday?", options: ["Do ... watch", "Did ... watch", "Have ... watched", "Were ... watching"], answer: "Did ... watch" }
+                ]
+            },
+            PastContinuous: {
+                title: "Past Continuous (Прошедшее длительное)",
+                intro: "Описывает действие, которое было в процессе в определенный момент в прошлом.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 20%; width: 40%;"></div><div class="timeline-point" style="left: 50%;"></div><div class="timeline-label" style="left: 40%;">Процесс в прошлом</div><div class="timeline-label" style="left: 50%;">Прерывающее действие</div></div>`,
+                usage: [ "Действие в процессе в определенный момент в прошлом: <i>At 5 PM yesterday, I <b>was reading</b>.</i>", "Два одновременных действия в прошлом: <i>While I <b>was cooking</b>, my husband <b>was watching</b> TV.</i>", "Длительное действие, прерванное коротким: <i>He <b>was sleeping</b> when the phone <b>rang</b>.</i>" ],
+                formula: { positive: "I/He/She/It + was + V-ing<br>You/We/They + were + V-ing", negative: "Subject + was/were + not + V-ing", question: "Was/Were + subject + V-ing?" },
+                markers: "while, when, as, at 5 o'clock yesterday.",
+                examples: [ "They <b>were playing</b> chess when I saw them.", "What <b>were</b> you <b>doing</b> at this time yesterday?" ],
+                quizzes: [
+                    { question: "He was reading a book when the doorbell ___.", options: ["rings", "rang", "was ringing", "rung"], answer: "rang" },
+                    { question: "While I ___ (drive) home, it started to rain.", options: ["drive", "drove", "was driving", "had driven"], answer: "was driving" },
+                    { question: "At 8 PM last night, they ___ dinner.", options: ["have", "had", "were having", "had had"], answer: "were having" }
+                ]
+            },
+            PastPerfect: {
+                title: "Past Perfect (Прошедшее совершенное)",
+                intro: "Используется для обозначения действия, которое произошло раньше другого действия в прошлом. 'Прошлое до прошлого'.",
+                timeline: `<div class="timeline"><div class="timeline-point" style="left: 30%;"></div><div class="timeline-point" style="left: 60%;"></div><div class="timeline-label" style="left: 30%;">Действие 1 (раньше)</div><div class="timeline-label" style="left: 60%;">Действие 2 (позже)</div></div>`,
+                usage: [ "Действие, завершившееся до другого действия в прошлом: <i>When I arrived, the train <b>had already left</b>.</i>", "Объяснение причины события в прошлом: <i>She was sad because she <b>had failed</b> her exam.</i>" ],
+                formula: { positive: "Subject + had + V3", negative: "Subject + had not (hadn't) + V3", question: "Had + subject + V3?" },
+                markers: "before, after, by the time, when, already.",
+                examples: [ "We <b>had eaten</b> dinner before they came.", "He <b>hadn't seen</b> that film before." ],
+                quizzes: [
+                    { question: "We ___ the goods by that time.", options: ["will shipped", "has shipped", "had shipped", "were shipped"], answer: "had shipped" },
+                    { question: "By the time she arrived, the party ___ (already/start).", options: ["already started", "had already started", "was already starting", "started already"], answer: "had already started" },
+                    { question: "He realized he ___ his wallet at home.", options: ["leave", "left", "was leaving", "had left"], answer: "had left" }
+                ]
+            },
+            PastPerfectContinuous: {
+                title: "Past Perfect Continuous (Прошедшее совершенное длительное)",
+                intro: "Описывает, как долго длилось действие до определенного момента в прошлом.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 10%; width: 60%;"></div><div class="timeline-point" style="left: 70%;"></div><div class="timeline-label" style="left: 40%;">Как долго длилось действие</div><div class="timeline-label" style="left: 70%;">Момент в прошлом</div></div>`,
+                usage: [ "Действие продолжалось до другого момента в прошлом: <i>They <b>had been waiting</b> for an hour when the bus arrived.</i>", "Причина какого-либо состояния в прошлом: <i>His eyes were red because he <b>had been crying</b>.</i>" ],
+                formula: { positive: "Subject + had been + V-ing", negative: "Subject + had not (hadn't) been + V-ing", question: "Had + subject + been + V-ing?" },
+                markers: "for, since, before, until.",
+                examples: [ "She <b>had been working</b> there for five years before she quit.", "How long <b>had</b> they <b>been dating</b> before they got married?" ],
+                quizzes: [
+                    { question: "She ___ for 2 hours before her friends finally arrived.", options: ["waited", "was waiting", "had been waiting", "waits"], answer: "had been waiting" },
+                    { question: "They ___ (play) tennis for an hour when it started to rain.", options: ["played", "were playing", "had played", "had been playing"], answer: "had been playing" },
+                    { question: "He was tired because he ___ all night.", options: ["studied", "was studying", "had studied", "had been studying"], answer: "had been studying" }
+                ]
+            },
+            FutureSimple: {
+                title: "Future Simple (Простое будущее)",
+                intro: "Используется для спонтанных решений, предсказаний, обещаний и неизбежных будущих событий.",
+                timeline: `<div class="timeline"><div class="timeline-point" style="left: 80%;"></div><div class="timeline-label" style="left: 80%;">Действие в будущем</div></div>`,
+                usage: [ "Предсказания, мнения: <i>I think it <b>will rain</b> tomorrow.</i>", "Спонтанные решения: <i>I'<b>ll answer</b> it.</i>", "Обещания, угрозы, предложения: <i>I <b>will help</b> you.</i>" ],
+                formula: { positive: "Subject + will + V1", negative: "Subject + will not (won't) + V1", question: "Will + subject + V1?" },
+                markers: "tomorrow, next week, soon, in a few days, I think, probably.",
+                examples: [ "They <b>will travel</b> to Spain next summer.", "I <b>won't tell</b> anyone your secret." ],
+                quizzes: [
+                    { question: "I think it ___ tomorrow.", options: ["rains", "is raining", "will rain", "rained"], answer: "will rain" },
+                    { question: "A: The phone is ringing. B: I ___ it!", options: ["answer", "am answering", "will answer", "answered"], answer: "will answer" },
+                    { question: "Perhaps she ___ us later.", options: ["calls", "is calling", "will call", "called"], answer: "will call" }
+                ]
+            },
+            FutureContinuous: {
+                title: "Future Continuous (Будущее длительное)",
+                intro: "Описывает действие, которое будет в процессе в определенный момент в будущем.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 60%; width: 30%;"></div><div class="timeline-label" style="left: 75%;">Процесс в будущем</div></div>`,
+                usage: [ "Действие в процессе в момент в будущем: <i>This time tomorrow, I <b>will be flying</b>.</i>", "Запланированное действие как часть рутины: <i>I <b>will be seeing</b> him tomorrow.</i>", "Вежливый вопрос о планах: <i><b>Will</b> you <b>be using</b> your computer tonight?</i>" ],
+                formula: { positive: "Subject + will be + V-ing", negative: "Subject + will not (won't) be + V-ing", question: "Will + subject + be + V-ing?" },
+                markers: "at 5 o'clock tomorrow, this time next week.",
+                examples: [ "She <b>will be working</b> when you call.", "What <b>will</b> you <b>be doing</b> at 10 PM tonight?" ],
+                quizzes: [
+                    { question: "This time next week, we ___ on a beach.", options: ["will relax", "relax", "are relaxing", "will be relaxing"], answer: "will be relaxing" },
+                    { question: "At 10 AM tomorrow, I ___ (take) an exam.", options: ["take", "will take", "am taking", "will be taking"], answer: "will be taking" },
+                    { question: "Don't call me between 7 and 8. I ___ dinner then.", options: ["will have", "have", "will be having", "am having"], answer: "will be having" }
+                ]
+            },
+            FuturePerfect: {
+                title: "Future Perfect (Будущее совершенное)",
+                intro: "Описывает действие, которое завершится к определенному моменту в будущем.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 30%; width: 50%; background: transparent; border-bottom: 3px dotted #3b82f6;"></div><div class="timeline-point" style="left: 80%;"></div><div class="timeline-label" style="left: 80%;">Действие завершится</div></div>`,
+                usage: [ "Действие, которое завершится к моменту в будущем: <i>By next year, I <b>will have graduated</b>.</i>" ],
+                formula: { positive: "Subject + will have + V3", negative: "Subject + will not (won't) have + V3", question: "Will + subject + have + V3?" },
+                markers: "by ..., by the time, before.",
+                examples: [ "He <b>will have finished</b> the project by Friday.", "<b>Will</b> she <b>have read</b> the book by the end of the month?" ],
+                quizzes: [
+                    { question: "By 2030, scientists ___ a cure for the disease.", options: ["will discover", "will have discovered", "discover", "will be discovering"], answer: "will have discovered" },
+                    { question: "By the time you arrive, I ___ (cook) dinner.", options: ["cook", "will cook", "will be cooking", "will have cooked"], answer: "will have cooked" },
+                    { question: "She ___ (save) enough money to buy a car by next year.", options: ["saves", "will save", "will have saved", "will be saving"], answer: "will have saved" }
+                ]
+            },
+            FuturePerfectContinuous: {
+                title: "Future Perfect Continuous (Будущее совершенное длительное)",
+                intro: "Показывает, как долго будет длиться действие к определенному моменту в будущем.",
+                timeline: `<div class="timeline"><div class="timeline-process" style="left: 20%; width: 60%;"></div><div class="timeline-point" style="left: 80%;"></div><div class="timeline-label" style="left: 50%;">Как долго будет длиться</div><div class="timeline-label" style="left: 80%;">Момент в будущем</div></div>`,
+                usage: [ "Подчеркивает длительность действия до момента в будущем: <i>By next month, we <b>will have been living</b> here for ten years.</i>" ],
+                formula: { positive: "Subject + will have been + V-ing", negative: "Subject + will not (won't) have been + V-ing", question: "Will + subject + have been + V-ing?" },
+                markers: "by ... for ..., by the time.",
+                examples: [ "Next year, I <b>will have been working</b> here for 20 years.", "How long <b>will</b> you <b>have been waiting</b> by 6 PM?" ],
+                quizzes: [
+                    { question: "By the time he retires, he ___ for 40 years.", options: ["will work", "will be working", "works", "will have been working"], answer: "will have been working" },
+                    { question: "In June, we ___ (live) in this house for ten years.", options: ["live", "will live", "will be living", "will have been living"], answer: "will have been living" },
+                    { question: "By next week, she ___ (study) for this exam for three months.", options: ["studies", "will study", "will be studying", "will have been studying"], answer: "will have been studying" }
+                ]
+            }
+        };
+
+        let currentTime = 'Present';
+        let currentAspect = 'Simple';
+        let currentQuizIndex = 0;
+        let currentTenseKey = '';
+
+        const timeNavElement = document.getElementById('time-nav');
+        const aspectNavElement = document.getElementById('aspect-nav');
+        const contentContainerElement = document.getElementById('content-container');
+        const verbsModal = document.getElementById('verbsModal');
+        const openVerbsModalBtn = document.getElementById('openVerbsModal');
+        const closeVerbsModalBtn = document.getElementById('closeVerbsModal');
+        const irregularVerbsTableBody = document.getElementById('irregularVerbsTableBody');
+
+        function populateIrregularVerbsTable() {
+            irregularVerbsData.forEach(verb => {
+                const row = irregularVerbsTableBody.insertRow();
+                row.insertCell().textContent = verb.v1;
+                row.insertCell().textContent = verb.v2;
+                row.insertCell().textContent = verb.v3;
+                row.insertCell().textContent = verb.translation;
+            });
+        }
+        
+        openVerbsModalBtn.onclick = function() {
+            verbsModal.style.display = "block";
+        }
+        closeVerbsModalBtn.onclick = function() {
+            verbsModal.style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == verbsModal) {
+                verbsModal.style.display = "none";
+            }
+        }
+
+        function renderMainContent() {
+            currentTenseKey = currentTime + currentAspect;
+            const contentData = data[currentTenseKey];
+            currentQuizIndex = 0; 
+
+            if (!contentData) {
+                contentContainerElement.innerHTML = `<p class="text-center text-slate-500">Информация не найдена.</p>`;
+                return;
+            }
+
+            const usageList = contentData.usage.map(item => `<li class="mb-2">${item}</li>`).join('');
+            const examplesList = contentData.examples.map(item => `<li class="mb-2 p-3 bg-slate-100 rounded-lg">${item}</li>`).join('');
+
+            contentContainerElement.innerHTML = `
+                <div class="content-section active" id="content-${currentTenseKey}">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-2 text-blue-800">${contentData.title}</h2>
+                    <p class="text-slate-600 mb-6">${contentData.intro}</p>
+                    
+                    ${contentData.timeline || ''}
+
+                    <div class="grid md:grid-cols-2 gap-6 mt-8">
+                        <div class="bg-blue-50 p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-blue-900">Использование</h3>
+                            <ul class="list-disc list-inside text-slate-700 space-y-2">${usageList}</ul>
+                        </div>
+                        <div class="bg-green-50 p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-green-900">Формула</h3>
+                            <div class="space-y-4">
+                                <div><h4 class="font-bold text-green-800">(+) Утверждение</h4><code class="block text-sm p-2 bg-green-100 rounded mt-1">${contentData.formula.positive}</code></div>
+                                <div><h4 class="font-bold text-green-800">(-) Отрицание</h4><code class="block text-sm p-2 bg-green-100 rounded mt-1">${contentData.formula.negative}</code></div>
+                                <div><h4 class="font-bold text-green-800">(?) Вопрос</h4><code class="block text-sm p-2 bg-green-100 rounded mt-1">${contentData.formula.question}</code></div>
+                            </div>
+                        </div>
+                        <div class="bg-indigo-50 p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-900">Примеры</h3>
+                            <ul class="space-y-2">${examplesList}</ul>
+                        </div>
+                        <div class="bg-amber-50 p-6 rounded-xl">
+                             <h3 class="text-xl font-semibold mb-3 text-amber-900">Слова-маркеры</h3>
+                             <p class="text-slate-700">${contentData.markers}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="text-2xl font-bold mb-4 text-center">Проверьте свои знания</h3>
+                        <div id="quiz-section" class="max-w-xl mx-auto bg-slate-100 p-6 rounded-xl">
+                           
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderCurrentQuizQuestion();
+        }
+
+        function renderCurrentQuizQuestion() {
+            const quizSection = document.getElementById('quiz-section');
+            if (!quizSection) return;
+
+            const tenseData = data[currentTenseKey];
+            if (!tenseData || !tenseData.quizzes || tenseData.quizzes.length === 0) {
+                quizSection.innerHTML = "<p>Тесты для этого времени пока не добавлены.</p>";
+                return;
+            }
+
+            if (currentQuizIndex >= tenseData.quizzes.length) {
+                quizSection.innerHTML = `<p class="text-center text-green-600 font-semibold text-lg">🎉 Все тесты по этому времени пройдены! Выберите другое время или аспект.</p>`;
+                return;
+            }
+            
+            const quizData = tenseData.quizzes[currentQuizIndex];
+            const quizOptionsHTML = quizData.options.map(option =>
+                `<button class="quiz-option w-full text-left p-3 border rounded-lg transition">${option}</button>`
+            ).join('');
+
+            quizSection.innerHTML = `
+                <p class="text-lg mb-1">Вопрос ${currentQuizIndex + 1} из ${tenseData.quizzes.length}</p>
+                <p class="text-lg mb-4">${quizData.question.replace('___', '<span class="font-bold text-blue-600">___</span>')}</p>
+                <div id="quiz-options-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${quizOptionsHTML}
+                </div>
+                <div id="quiz-feedback" class="mt-4 text-center font-semibold"></div>
+                <button id="next-quiz-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition hidden">Следующий вопрос</button>
+            `;
+            attachQuizItemListeners(quizData);
+        }
+
+        function attachQuizItemListeners(quizData) {
+            const optionsContainer = document.getElementById('quiz-options-container');
+            const feedbackEl = document.getElementById('quiz-feedback');
+            const nextButton = document.getElementById('next-quiz-button');
+            
+            optionsContainer.addEventListener('click', function quizClickHandler(e) {
+                if (e.target.classList.contains('quiz-option') && !e.target.disabled) {
+                    const selectedAnswer = e.target.textContent;
+                    
+                    Array.from(optionsContainer.children).forEach(child => {
+                        child.disabled = true;
+                        child.classList.remove('quiz-option:hover');
+                        if (child.textContent === quizData.answer) {
+                           child.classList.add('bg-green-200', 'border-green-400');
+                        }
+                    });
+
+                    if (selectedAnswer === quizData.answer) {
+                        feedbackEl.textContent = 'Правильно! ✅';
+                        feedbackEl.className = 'mt-4 text-center font-semibold text-green-600';
+                        e.target.classList.add('bg-green-200', 'border-green-400');
+                    } else {
+                        feedbackEl.textContent = `Неверно. Правильный ответ: ${quizData.answer} ❌`;
+                        feedbackEl.className = 'mt-4 text-center font-semibold text-red-600';
+                        e.target.classList.add('bg-red-200', 'border-red-400');
+                    }
+                    nextButton.classList.remove('hidden');
+                    optionsContainer.removeEventListener('click', quizClickHandler); 
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                currentQuizIndex++;
+                renderCurrentQuizQuestion();
+            });
+        }
+
+        function updateActiveTabs() {
+            document.querySelectorAll('.time-tab').forEach(tab => {
+                tab.classList.toggle('tab-active', tab.dataset.time === currentTime);
+            });
+            document.querySelectorAll('.aspect-tab').forEach(tab => {
+                tab.classList.toggle('aspect-tab-active', tab.dataset.aspect === currentAspect);
+            });
+        }
+
+        timeNavElement.addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-tab')) {
+                currentTime = e.target.dataset.time;
+                updateActiveTabs();
+                renderMainContent();
+            }
+        });
+
+        aspectNavElement.addEventListener('click', (e) => {
+            if (e.target.classList.contains('aspect-tab')) {
+                currentAspect = e.target.dataset.aspect;
+                updateActiveTabs();
+                renderMainContent();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            populateIrregularVerbsTable();
+            updateActiveTabs();
+            renderMainContent();
+        });
+    </script>
+
+</body>
+</html>
